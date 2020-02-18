@@ -4,3 +4,5 @@ services:
   bot:
     # build: "UnityStation Discord Bot"
     image: unitystation/discord-bot
+    volumes: 
+      - /etc/discord-bot/Config.json:/app/Config.json
