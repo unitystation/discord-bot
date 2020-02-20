@@ -510,13 +510,16 @@ namespace UnityStation_Discord_Bot
             {
                 scp.Connect();
                 await message.Channel.SendMessageAsync($"Connection successful");
-                using var stream = new MemoryStream();
+
+                var stream = new MemoryStream();
                 scp.Download("server/serverlog.txt", stream);
                 var length = stream.Length;
+
                 stream.Seek(0, SeekOrigin.Begin);
-                using var gzip = new GZipStream(stream, CompressionLevel.Optimal, true);
+                var gzip = new GZipStream(stream, CompressionLevel.Optimal, true);
                 try
                 {
+                	stream.Seek(0, SeekOrigin.Begin);
                     await message.Channel.SendFileAsync(stream, $"serverlog-{serverConnection.ServerName}.log");
                 }
                 catch (HttpException)
@@ -530,6 +533,8 @@ namespace UnityStation_Discord_Bot
                         await message.Channel.SendMessageAsync($"Log size might be too long: {length / 1024 / 1024}MB");
                     }
                 }
+				stream.Dispose();
+				gzip.Dispose();
                 scp.Disconnect();
             }
         }
