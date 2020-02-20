@@ -511,21 +511,24 @@ namespace UnityStation_Discord_Bot
                 scp.Connect();
                 await message.Channel.SendMessageAsync($"Connection successful");
 
-                using var stream = new MemoryStream();
+                using var rawStream = new MemoryStream();
 
-                scp.Download("server/serverlog.txt", stream);
-                var length = stream.Length;
-                stream.Seek(0, SeekOrigin.Begin);
+                scp.Download("server/serverlog.txt", rawStream);
+                var length = rawStream.Length;
+                rawStream.Seek(0, SeekOrigin.Begin);
 
-                using var gzip = new GZipStream(stream, CompressionMode.Compress);
-
-                try
+				using var zipStream = new MemoryStream();
+                using (var gzip = new GZipStream(zipStream, CompressionMode.Compress))
                 {
-                    await message.Channel.SendFileAsync(gzip, $"serverlog-{serverConnection.ServerName}.log.gz");
-                }
-                catch (HttpException)
-                {
-                    await message.Channel.SendMessageAsync($"Log size might be too long: {length / 1024 / 1024}MB");
+					rawStream.CopyTo(gzip);
+                    try
+                    {
+                        await message.Channel.SendFileAsync(zipStream, $"serverlog-{serverConnection.ServerName}.log.gz");
+                    }
+                    catch (HttpException)
+                    {
+                        await message.Channel.SendMessageAsync($"Log size might be too long: {length / 1024 / 1024}MB");
+                    }
                 }
 
                 scp.Disconnect();
