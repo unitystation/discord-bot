@@ -7,6 +7,7 @@ using Renci.SshNet.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -133,7 +134,7 @@ namespace UnityStation_Discord_Bot
         private static async Task Help(SocketMessage message)
         {
             string commandList = ">>> Implemented commands:\n";
-            commandList += "!help\n!ping\n!serverlist\n!hardreset\n!update\n!reboot\n!gameban\n!gameadmin\n!ufw\n!botadmin";
+            commandList += "!help\n!ping\n!serverlist\n!hardreset\n!update\n!reboot\n!gameban\n!gameadmin\n!ufw\n!botadmin\n!getlog";
             await message.Channel.SendMessageAsync(commandList);
         }
 
@@ -511,15 +512,23 @@ namespace UnityStation_Discord_Bot
                 await message.Channel.SendMessageAsync($"Connection successful");
                 using var stream = new MemoryStream();
                 scp.Download("server/serverlog.txt", stream);
-				var length = stream.Length;
+                var length = stream.Length;
                 stream.Seek(0, SeekOrigin.Begin);
+                using var gzip = new GZipStream(stream, CompressionLevel.Optimal, true);
                 try
                 {
                     await message.Channel.SendFileAsync(stream, $"serverlog-{serverConnection.ServerName}.log");
                 }
                 catch (HttpException)
                 {
-                    await message.Channel.SendMessageAsync($"Log size might be too big, log size: {length}");
+                    try
+                    {
+                        await message.Channel.SendFileAsync(gzip, $"serverlog-{serverConnection.ServerName}.log.gz");
+                    }
+                    catch (HttpException)
+                    {
+                        await message.Channel.SendMessageAsync($"Log size might be too long: {length / 1024 / 1024}MB");
+                    }
                 }
                 scp.Disconnect();
             }
