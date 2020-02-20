@@ -517,7 +517,7 @@ namespace UnityStation_Discord_Bot
                 var length = stream.Length;
                 stream.Seek(0, SeekOrigin.Begin);
 
-                using var gzip = new GZipStream(stream, CompressionLevel.Optimal, true);
+                using var gzip = new GZipStream(stream, CompressionMode.Compress);
 
                 try
                 {
@@ -527,7 +527,7 @@ namespace UnityStation_Discord_Bot
                 {
                     await message.Channel.SendMessageAsync($"Log size might be too long: {length / 1024 / 1024}MB");
                 }
-				
+
                 scp.Disconnect();
             }
         }
