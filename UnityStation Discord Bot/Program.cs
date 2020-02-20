@@ -521,6 +521,7 @@ namespace UnityStation_Discord_Bot
                 using (var gzip = new GZipStream(zipStream, CompressionMode.Compress))
                 {
 					rawStream.CopyTo(gzip);
+                	zipStream.Seek(0, SeekOrigin.Begin);
                     try
                     {
                         await message.Channel.SendFileAsync(zipStream, $"serverlog-{serverConnection.ServerName}.log.gz");
