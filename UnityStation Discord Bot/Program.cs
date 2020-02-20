@@ -512,6 +512,7 @@ namespace UnityStation_Discord_Bot
 						await message.Channel.SendMessageAsync($"Connection successful");
 						using var stream = new MemoryStream();
 						scp.Download("server/serverlog.txt", stream);
+						stream.Seek(0, SeekOrigin.Begin);
 						await message.Channel.SendFileAsync(stream, $"serverlog-{serverConnection.ServerName}.log");
 						scp.Disconnect();
 					}
