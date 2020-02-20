@@ -511,6 +511,7 @@ namespace UnityStation_Discord_Bot
                 await message.Channel.SendMessageAsync($"Connection successful");
                 using var stream = new MemoryStream();
                 scp.Download("server/serverlog.txt", stream);
+				var length = stream.Length;
                 stream.Seek(0, SeekOrigin.Begin);
                 try
                 {
@@ -518,7 +519,7 @@ namespace UnityStation_Discord_Bot
                 }
                 catch (HttpException)
                 {
-                    await message.Channel.SendMessageAsync($"Log size might be too big, log size: {stream.Length}");
+                    await message.Channel.SendMessageAsync($"Log size might be too big, log size: {length}");
                 }
                 scp.Disconnect();
             }
