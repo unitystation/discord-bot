@@ -121,6 +121,11 @@ namespace UnityStation_Discord_Bot
 						return;
 					await BotAdmin(message);
 					break;
+				case "!getlog":
+					if (!await CheckAdmin(message))
+						return;
+					await GetLog(message);
+					break;
 			}
 		}
 
@@ -481,6 +486,37 @@ namespace UnityStation_Discord_Bot
 				streamWriter.Write(configJson);
 			}
 			await message.Channel.SendMessageAsync($"User {commandParams[2]} was removed from bot admins");
+		}
+
+		private async Task GetLog(SocketMessage message)
+		{
+			List<string> commandParams = message.Content.Split(" ").ToList();
+			if (commandParams.Count != 2)
+			{
+				await message.Channel.SendMessageAsync($"Usage: !getlog servername (ex.: USA01 or GER01)");
+			}
+			else
+			{
+				ServerConnection serverConnection = config.ServersConnections.FirstOrDefault(s => s.ServerName == commandParams[1]);
+				if (serverConnection == null)
+				{
+					await message.Channel.SendMessageAsync($"Unknown server: {commandParams[1]}");
+				}
+				else
+				{
+					await message.Channel.SendMessageAsync($"{message.Author.Username} asked for the logs for server {commandParams[1]}");
+
+					using (ScpClient scp = new ScpClient(serverConnection.Ip, serverConnection.Login, serverConnection.Password))
+					{
+						scp.Connect();
+						await message.Channel.SendMessageAsync($"Connection successful");
+						using var stream = new MemoryStream();
+						scp.Download("server/serverlog.txt", stream);
+						await message.Channel.SendFileAsync(stream, $"serverlog-{serverConnection.ServerName}.log");
+						scp.Disconnect();
+					}
+				}
+			}
 		}
 
 	}
