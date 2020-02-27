@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -446,7 +446,7 @@ namespace UnityStation_Discord_Bot
 	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
 		return;
 	    }
-	    string userName = await client.GetUserAsync(UInt64.Parse(id));
+	    string userName = client.GetUser(UInt64.Parse(id)).Username;
 
             if (config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
@@ -470,7 +470,7 @@ namespace UnityStation_Discord_Bot
 	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
 		return;
 	    }
-	    string userName = await client.GetUserAsync(UInt64.Parse(id));
+	    string userName = client.GetUser(UInt64.Parse(id)).Username;
 		
             if (!config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
