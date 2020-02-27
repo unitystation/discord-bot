@@ -444,7 +444,7 @@ namespace UnityStation_Discord_Bot
             string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
 	    if(id.Length < 17){
 	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
-		return
+		return;
 	    }
 	    string userName = await client.GetUserAsync(UInt64.Parse(id));
 
