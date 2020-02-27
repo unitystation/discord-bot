@@ -56,7 +56,7 @@ namespace UnityStation_Discord_Bot
 
         private async Task<bool> CheckAdmin(SocketMessage message)
         {
-            if (config.Admins.Exists(p => p.Name.Equals($"{message.Author.Username}#{message.Author.Discriminator}", StringComparison.InvariantCultureIgnoreCase)))
+            if (config.Admins.Exists(p => p.Name.StartsWith($"{message.Author.Id.ToString()}", StringComparison.InvariantCultureIgnoreCase)))
             {
                 return true;
             }
@@ -405,13 +405,13 @@ namespace UnityStation_Discord_Bot
 
             if (commandParams.Count < 2 || commandParams.Count > 3 || !allowedVerbs.Contains(commandParams[1]))
             {
-                await message.Channel.SendMessageAsync($"Usage: !botadmin list|add|revoke [username#1234]\nNote: since usernames may contain spaces, you may use \" to enclose it.");
+                await message.Channel.SendMessageAsync($"Usage: !botadmin list|add|revoke [@mention|id]");
                 return;
             }
 
             if (commandParams[1] != "list" && commandParams.Count < 3)
             {
-                await message.Channel.SendMessageAsync($"Usage: !botadmin add|revoke [username#1234]\nNote: since usernames may contain spaces, you may use \" to enclose it.");
+                await message.Channel.SendMessageAsync($"Usage: !botadmin add|revoke [@mention|id]");
                 return;
             }
 
@@ -441,21 +441,16 @@ namespace UnityStation_Discord_Bot
 
         private async Task BotAdminAdd(SocketMessage message, List<string> commandParams)
         {
-            string userName = commandParams[2].Trim('"');
+            string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
+	    string userName = await client.GetUserAsync(UInt64.Parse(id))
 
-            if (!userName.Contains("#"))
-            {
-                await message.Channel.SendMessageAsync("Discord user name should be in the Name#1234 format");
-                return;
-            }
-
-            if (config.Admins.Exists(p => p.Name == userName))
+            if (config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
                 await message.Channel.SendMessageAsync($"User {commandParams[2]} is already a bot admin");
                 return;
             }
 
-            config.Admins.Add(new Admin() { Name = userName });
+            config.Admins.Add(new Admin() { Name = id+" "+userName });
             string configJson = JsonSerializer.Serialize(config);
             using (StreamWriter streamWriter = new StreamWriter(new FileStream("config.json", FileMode.Create)))
             {
@@ -466,21 +461,16 @@ namespace UnityStation_Discord_Bot
 
         private async Task BotAdminRevoke(SocketMessage message, List<string> commandParams)
         {
-            string userName = commandParams[2].Trim('"');
-
-            if (!userName.Contains("#"))
-            {
-                await message.Channel.SendMessageAsync("Discord user name should be in the Name#1234 format");
-                return;
-            }
-
-            if (!config.Admins.Exists(p => p.Name == userName))
+            string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
+	    string userName = await client.GetUserAsync(UInt64.Parse(id))
+		
+            if (!config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
                 await message.Channel.SendMessageAsync($"User {commandParams[2]} is not a bot admin");
                 return;
             }
 
-            config.Admins.Remove(config.Admins.Find(p => p.Name == userName));
+            config.Admins.Remove(config.Admins.Find(p => p.Name.StartsWith(id)));
 
             string configJson = JsonSerializer.Serialize(config);
             using (StreamWriter streamWriter = new StreamWriter(new FileStream("config.json", FileMode.Create)))
