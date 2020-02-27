@@ -442,7 +442,11 @@ namespace UnityStation_Discord_Bot
         private async Task BotAdminAdd(SocketMessage message, List<string> commandParams)
         {
             string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
-	    string userName = await client.GetUserAsync(UInt64.Parse(id))
+	    if(id.Length < 17){
+	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
+		return
+	    }
+	    string userName = await client.GetUserAsync(UInt64.Parse(id));
 
             if (config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
@@ -462,7 +466,11 @@ namespace UnityStation_Discord_Bot
         private async Task BotAdminRevoke(SocketMessage message, List<string> commandParams)
         {
             string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
-	    string userName = await client.GetUserAsync(UInt64.Parse(id))
+	    if(id.Length < 17){
+	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
+		return;
+	    }
+	    string userName = await client.GetUserAsync(UInt64.Parse(id));
 		
             if (!config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
