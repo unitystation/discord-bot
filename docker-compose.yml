@@ -2,7 +2,7 @@ version: "3"
 
 services:
   bot:
-    # build: "UnityStation Discord Bot"
+    restart: unless-stopped
     image: unitystation/discord-bot
     volumes: 
       - /etc/discord-bot/Config.json:/app/Config.json
