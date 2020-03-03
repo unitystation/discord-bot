@@ -19,7 +19,7 @@ namespace UnityStation_Discord_Bot
 {
     class Program
     {
-        private IConfiguration configuration;
+        private const string configFileName = "Config.json";
         private DiscordSocketClient client;
         private Config config;
 
@@ -38,9 +38,9 @@ namespace UnityStation_Discord_Bot
         {
             IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("Config.json");
+                .AddJsonFile(configFileName);
 
-            configuration = configurationBuilder.Build();
+            IConfiguration configuration = configurationBuilder.Build();
             config = configuration.Get<Config>();
 
             client = new DiscordSocketClient();
@@ -387,7 +387,7 @@ namespace UnityStation_Discord_Bot
                     await message.Channel.SendMessageAsync($"Connection to {serverConnection.ServerName} successful");
                     await message.Channel.SendMessageAsync($"Adding {commandParams[2]} to deny rule list");
                     SshCommand cmd = sshClient.CreateCommand($"ufw insert 1 deny from {commandParams[2]} to any");
-                    string cmdResult = cmd.Execute();
+                    cmd.Execute();
                     sshClient.Disconnect();
                 }
             }
@@ -431,22 +431,24 @@ namespace UnityStation_Discord_Bot
 
         private async Task BotAdminList(SocketMessage message)
         {
-            string adminList = ">>> BOT Admins are: \n";
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append(">>> BOT Admins are: \n");
             foreach (Admin admin in config.Admins)
             {
-                adminList += $"{admin.Name}\n";
+                stringBuilder.Append($"{admin.Name}\n");
             }
-            await message.Channel.SendMessageAsync(adminList);
+            await message.Channel.SendMessageAsync(stringBuilder.ToString());
         }
 
         private async Task BotAdminAdd(SocketMessage message, List<string> commandParams)
         {
-            string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
-	    if(id.Length < 17){
-	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
-		return;
-	    }
-	    string userName = client.GetUser(UInt64.Parse(id)).Username;
+            string id = Regex.Replace(commandParams[2].Trim('"'), @"[^\d]", "");
+            if (id.Length < 17)
+            {
+                await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
+                return;
+            }
+            string userName = client.GetUser(UInt64.Parse(id)).Username;
 
             if (config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
@@ -454,24 +456,30 @@ namespace UnityStation_Discord_Bot
                 return;
             }
 
-            config.Admins.Add(new Admin() { Name = id+" "+userName });
+            config.Admins.Add(new Admin() { Name = id + " " + userName });
+            SaveConfig();
+
+            await message.Channel.SendMessageAsync($"User {commandParams[2]} was added to the bot admins");
+        }
+
+        private void SaveConfig()
+        {
             string configJson = JsonSerializer.Serialize(config);
-            using (StreamWriter streamWriter = new StreamWriter(new FileStream("config.json", FileMode.Create)))
+            using (StreamWriter streamWriter = new StreamWriter(new FileStream(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + configFileName, FileMode.Create)))
             {
                 streamWriter.Write(configJson);
             }
-            await message.Channel.SendMessageAsync($"User {commandParams[2]} was added to the bot admins");
         }
 
         private async Task BotAdminRevoke(SocketMessage message, List<string> commandParams)
         {
-            string id = Regex.Replace(commandParams[2].Trim('"'),@"[^\d]","");
-	    if(id.Length < 17){
-	    	await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
-		return;
-	    }
-	    string userName = client.GetUser(UInt64.Parse(id)).Username;
-		
+            string id = Regex.Replace(commandParams[2].Trim('"'), @"[^\d]", "");
+            if (id.Length < 17)
+            {
+                await message.Channel.SendMessageAsync($"{commandParams[2]} is not a valid ID!");
+                return;
+            }
+            
             if (!config.Admins.Exists(p => p.Name.StartsWith(id)))
             {
                 await message.Channel.SendMessageAsync($"User {commandParams[2]} is not a bot admin");
@@ -479,12 +487,8 @@ namespace UnityStation_Discord_Bot
             }
 
             config.Admins.Remove(config.Admins.Find(p => p.Name.StartsWith(id)));
+            SaveConfig();
 
-            string configJson = JsonSerializer.Serialize(config);
-            using (StreamWriter streamWriter = new StreamWriter(new FileStream("config.json", FileMode.Create)))
-            {
-                streamWriter.Write(configJson);
-            }
             await message.Channel.SendMessageAsync($"User {commandParams[2]} was removed from bot admins");
         }
 
@@ -515,11 +519,11 @@ namespace UnityStation_Discord_Bot
                 var length = rawStream.Length;
                 rawStream.Seek(0, SeekOrigin.Begin);
 
-				using var zipStream = new MemoryStream();
+                using var zipStream = new MemoryStream();
                 using (var gzip = new GZipStream(zipStream, CompressionMode.Compress))
                 {
-					rawStream.CopyTo(gzip);
-                	zipStream.Seek(0, SeekOrigin.Begin);
+                    rawStream.CopyTo(gzip);
+                    zipStream.Seek(0, SeekOrigin.Begin);
                     try
                     {
                         await message.Channel.SendFileAsync(zipStream, $"serverlog-{serverConnection.ServerName}.log.gz");
