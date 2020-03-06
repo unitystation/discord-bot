@@ -4,5 +4,7 @@ services:
   bot:
     restart: unless-stopped
     image: unitystation/discord-bot
+    labels:
+      - io.portainer.accesscontrol.public
     volumes: 
       - /etc/discord-bot/Config.json:/app/Config.json
